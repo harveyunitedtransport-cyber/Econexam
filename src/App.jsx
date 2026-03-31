@@ -1,49 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { rawQuestionText } from "./questions";
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Progress } from "@/components/ui/progress";
-import { Badge } from "@/components/ui/badge";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-
-import {
-  AlertTriangle,
-  CheckCircle2,
-  ChevronLeft,
-  ChevronRight,
-  Clock,
-  Download,
-  FileQuestion,
-  Layers3,
-  Play,
-  RotateCcw,
-  User,
-  XCircle,
-} from "lucide-react";
-
 const QUESTIONS_PER_PART = 45;
-const timerOptions = [10, 15, 20, 30, 45, 60, 90, 120, 180];
+const TIMER_OPTIONS = [10, 15, 20, 30, 45, 60, 90, 120];
 
 function shuffleArray(items) {
   const arr = [...items];
@@ -70,7 +29,7 @@ function parseQuestions(raw) {
     .split("++++")
     .map((block) => block.trim())
     .filter(Boolean)
-    .map((block, blockIndex) => {
+    .map((block, index) => {
       const parts = block
         .split("====")
         .map((part) => part.replace(/\r/g, "").trim())
@@ -81,10 +40,11 @@ function parseQuestions(raw) {
       const question = parts[0];
       const rawOptions = parts.slice(1, 5);
       const correctIndex = rawOptions.findIndex((option) => option.startsWith("#"));
-      if (!question || correctIndex < 0 || rawOptions.length !== 4) return null;
+
+      if (!question || rawOptions.length !== 4 || correctIndex < 0) return null;
 
       return {
-        id: `q-${blockIndex + 1}`,
+        id: `q-${index + 1}`,
         question,
         options: rawOptions.map((option) => option.replace(/^#/, "").trim()),
         answer: correctIndex,
@@ -93,22 +53,162 @@ function parseQuestions(raw) {
     .filter(Boolean);
 }
 
-const masterQuestions = parseQuestions(rawQuestionText);
-const totalParts = Math.ceil(masterQuestions.length / QUESTIONS_PER_PART);
-
-const partOptions = Array.from({ length: totalParts }, (_, index) => ({
-  value: `part-${index + 1}`,
-  label: `Part ${index + 1}`,
-  start: index * QUESTIONS_PER_PART,
-  end: Math.min((index + 1) * QUESTIONS_PER_PART, masterQuestions.length),
-}));
+const allQuestions = parseQuestions(rawQuestionText);
+const totalParts = Math.ceil(allQuestions.length / QUESTIONS_PER_PART);
 
 function getQuestionsForMode(mode) {
-  if (mode === "all") return masterQuestions;
+  if (mode === "all") return allQuestions;
   const partIndex = Number(mode.replace("part-", "")) - 1;
   const start = partIndex * QUESTIONS_PER_PART;
-  return masterQuestions.slice(start, start + QUESTIONS_PER_PART);
+  return allQuestions.slice(start, start + QUESTIONS_PER_PART);
 }
+
+const styles = {
+  page: {
+    minHeight: "100vh",
+    background: "linear-gradient(135deg, #f8fafc 0%, #ffffff 50%, #eef2ff 100%)",
+    color: "#0f172a",
+    fontFamily: "Inter, system-ui, sans-serif",
+    padding: 24,
+  },
+  container: {
+    maxWidth: 1200,
+    margin: "0 auto",
+  },
+  card: {
+    background: "#ffffff",
+    border: "1px solid #e2e8f0",
+    borderRadius: 24,
+    boxShadow: "0 10px 30px rgba(15, 23, 42, 0.08)",
+  },
+  softCard: {
+    background: "#ffffff",
+    border: "1px solid #e2e8f0",
+    borderRadius: 20,
+    padding: 16,
+  },
+  badge: {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 8,
+    padding: "8px 12px",
+    borderRadius: 999,
+    fontSize: 13,
+    fontWeight: 700,
+    background: "#e2e8f0",
+    color: "#0f172a",
+  },
+  primaryBadge: {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 8,
+    padding: "8px 12px",
+    borderRadius: 999,
+    fontSize: 13,
+    fontWeight: 700,
+    background: "#0f172a",
+    color: "#ffffff",
+  },
+  button: {
+    border: "none",
+    borderRadius: 16,
+    padding: "12px 18px",
+    fontSize: 15,
+    fontWeight: 700,
+    cursor: "pointer",
+    background: "#0f172a",
+    color: "#ffffff",
+  },
+  outlineButton: {
+    border: "1px solid #cbd5e1",
+    borderRadius: 16,
+    padding: "12px 18px",
+    fontSize: 15,
+    fontWeight: 700,
+    cursor: "pointer",
+    background: "#ffffff",
+    color: "#0f172a",
+  },
+  input: {
+    width: "100%",
+    padding: "12px 14px",
+    borderRadius: 14,
+    border: "1px solid #cbd5e1",
+    fontSize: 15,
+    boxSizing: "border-box",
+    background: "#fff",
+  },
+  label: {
+    display: "block",
+    fontSize: 14,
+    fontWeight: 700,
+    marginBottom: 8,
+  },
+  progressWrap: {
+    width: "100%",
+    height: 10,
+    background: "#e2e8f0",
+    borderRadius: 999,
+    overflow: "hidden",
+  },
+  progressFill: (value) => ({
+    width: `${value}%`,
+    height: "100%",
+    background: "linear-gradient(90deg, #0f172a, #475569)",
+  }),
+  option: {
+    width: "100%",
+    textAlign: "left",
+    border: "1px solid #e2e8f0",
+    background: "#ffffff",
+    borderRadius: 18,
+    padding: 16,
+    cursor: "pointer",
+    fontSize: 15,
+    lineHeight: 1.6,
+  },
+  optionSelected: {
+    width: "100%",
+    textAlign: "left",
+    border: "1px solid #0f172a",
+    background: "#0f172a",
+    color: "#ffffff",
+    borderRadius: 18,
+    padding: 16,
+    cursor: "pointer",
+    fontSize: 15,
+    lineHeight: 1.6,
+  },
+  paletteBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    border: "1px solid #cbd5e1",
+    background: "#ffffff",
+    fontWeight: 700,
+    cursor: "pointer",
+  },
+  paletteAnswered: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    border: "1px solid #86efac",
+    background: "#f0fdf4",
+    color: "#166534",
+    fontWeight: 700,
+    cursor: "pointer",
+  },
+  paletteActive: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    border: "1px solid #0f172a",
+    background: "#0f172a",
+    color: "#ffffff",
+    fontWeight: 700,
+    cursor: "pointer",
+  },
+};
 
 export default function App() {
   const [phase, setPhase] = useState("start");
@@ -117,7 +217,6 @@ export default function App() {
   const [shuffleAnswers, setShuffleAnswers] = useState(false);
   const [durationMinutes, setDurationMinutes] = useState("45");
   const [selectedMode, setSelectedMode] = useState("part-1");
-
   const [quizQuestions, setQuizQuestions] = useState([]);
   const [answers, setAnswers] = useState({});
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -131,10 +230,21 @@ export default function App() {
   const selectedModeQuestions = useMemo(() => getQuestionsForMode(selectedMode), [selectedMode]);
 
   const selectedModeLabel = useMemo(() => {
-    if (selectedMode === "all") return `All Questions (${masterQuestions.length})`;
-    const option = partOptions.find((item) => item.value === selectedMode);
-    return option ? `${option.label} (${option.start + 1}-${option.end})` : "Selected Part";
+    if (selectedMode === "all") return `All Questions (${allQuestions.length})`;
+    const n = Number(selectedMode.replace("part-", ""));
+    const start = (n - 1) * QUESTIONS_PER_PART + 1;
+    const end = Math.min(n * QUESTIONS_PER_PART, allQuestions.length);
+    return `Part ${n} (${start}-${end})`;
   }, [selectedMode]);
+
+  const totalQuestions = quizQuestions.length;
+  const answeredCount = useMemo(
+    () => Object.values(answers).filter((value) => typeof value === "number").length,
+    [answers]
+  );
+  const unansweredCount = Math.max(totalQuestions - answeredCount, 0);
+  const progressValue = totalQuestions ? ((currentIndex + 1) / totalQuestions) * 100 : 0;
+  const isWarning = remainingSeconds <= 5 * 60;
 
   const preparedQuestions = useMemo(() => {
     const base = selectedModeQuestions.map((q) => {
@@ -162,43 +272,22 @@ export default function App() {
     return shuffleQuestions ? shuffleArray(base) : base;
   }, [selectedModeQuestions, shuffleAnswers, shuffleQuestions]);
 
-  const totalQuestions = quizQuestions.length;
-
-  const answeredCount = useMemo(
-    () => Object.values(answers).filter((value) => typeof value === "number").length,
-    [answers]
-  );
-
-  const unansweredCount = Math.max(totalQuestions - answeredCount, 0);
-
-  const progressValue = totalQuestions ? ((currentIndex + 1) / totalQuestions) * 100 : 0;
-
-  const warningThreshold = 5 * 60;
-  const isWarning = remainingSeconds <= warningThreshold;
-
   const summary = useMemo(() => {
     if (!quizQuestions.length) {
-      return {
-        correct: 0,
-        incorrect: 0,
-        percent: 0,
-        timeUsed: 0,
-        results: [],
-      };
+      return { correct: 0, incorrect: 0, percent: 0, timeUsed: 0, results: [] };
     }
 
     const results = quizQuestions.map((q, index) => {
       const selectedIndex = answers[index];
       const isCorrect = selectedIndex === q.correctIndex;
-
       return {
-        questionNumber: index + 1,
         question: q.question,
-        selectedIndex,
         selectedAnswer: typeof selectedIndex === "number" ? q.options[selectedIndex] : "",
-        correctIndex: q.correctIndex,
         correctAnswer: q.options[q.correctIndex],
         isCorrect,
+        selectedIndex,
+        correctIndex: q.correctIndex,
+        options: q.options,
       };
     });
 
@@ -236,13 +325,11 @@ export default function App() {
     }, 1000);
 
     return () => {
-      if (intervalRef.current) {
-        window.clearInterval(intervalRef.current);
-      }
+      if (intervalRef.current) window.clearInterval(intervalRef.current);
     };
   }, [phase]);
 
-  function startQuiz() {
+  const startQuiz = () => {
     const duration = Number(durationMinutes) * 60;
     setQuizQuestions(preparedQuestions);
     setAnswers({});
@@ -252,22 +339,16 @@ export default function App() {
     setSubmittedAt(null);
     setIsAutoSubmitted(false);
     setPhase("test");
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }
+  };
 
-  function submitQuiz() {
-    if (intervalRef.current) {
-      window.clearInterval(intervalRef.current);
-    }
+  const submitQuiz = () => {
+    if (intervalRef.current) window.clearInterval(intervalRef.current);
     setSubmittedAt(Date.now());
     setPhase("results");
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }
+  };
 
-  function restartQuiz() {
-    if (intervalRef.current) {
-      window.clearInterval(intervalRef.current);
-    }
+  const restartQuiz = () => {
+    if (intervalRef.current) window.clearInterval(intervalRef.current);
     setPhase("start");
     setAnswers({});
     setCurrentIndex(0);
@@ -276,19 +357,18 @@ export default function App() {
     setStartedAt(null);
     setSubmittedAt(null);
     setIsAutoSubmitted(false);
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }
+  };
 
-  function handleSelectAnswer(optionIndex) {
+  const handleSelectAnswer = (optionIndex) => {
     setAnswers((prev) => ({ ...prev, [currentIndex]: optionIndex }));
-  }
+  };
 
-  function jumpToQuestion(index) {
+  const jumpToQuestion = (index) => {
     setCurrentIndex(index);
     window.scrollTo({ top: 0, behavior: "smooth" });
-  }
+  };
 
-  function exportCsv() {
+  const exportCsv = () => {
     const rows = [
       ["Student Name", studentName || "Anonymous"],
       ["Quiz Title", "Economics Theory Test"],
@@ -302,9 +382,9 @@ export default function App() {
       ["#", "Question", "Selected Answer", "Correct Answer", "Correct"],
     ];
 
-    summary.results.forEach((item) => {
+    summary.results.forEach((item, index) => {
       rows.push([
-        String(item.questionNumber),
+        String(index + 1),
         item.question,
         item.selectedAnswer || "No answer",
         item.correctAnswer,
@@ -324,539 +404,302 @@ export default function App() {
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
-  }
+  };
 
   const currentQuestion = quizQuestions[currentIndex];
+  const twoCol = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 16 };
+  const threeCol = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 16 };
+  const mainGrid = { display: "grid", gridTemplateColumns: "minmax(0, 1fr)", gap: 24 };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 text-slate-900">
-      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+    <div style={styles.page}>
+      <div style={styles.container}>
         {phase === "start" && (
-          <div className="mx-auto flex min-h-[80vh] max-w-4xl items-center justify-center">
-            <Card className="w-full rounded-3xl border-slate-200 shadow-xl">
-              <CardHeader className="space-y-4 pb-2">
-                <div className="flex flex-wrap items-center gap-3">
-                  <Badge className="rounded-full px-3 py-1 text-sm">Economics Test</Badge>
-                  <Badge variant="secondary" className="rounded-full px-3 py-1 text-sm">
-                    {masterQuestions.length} Questions
-                  </Badge>
-                  <Badge variant="outline" className="rounded-full px-3 py-1 text-sm">
-                    {totalParts} Parts
-                  </Badge>
+          <div style={{ maxWidth: 900, margin: "0 auto" }}>
+            <div style={{ ...styles.card, padding: 24 }}>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginBottom: 18 }}>
+                <span style={styles.primaryBadge}>Economics Test</span>
+                <span style={styles.badge}>{allQuestions.length} Total Questions</span>
+                <span style={styles.badge}>{totalParts} Parts</span>
+              </div>
+
+              <h1 style={{ fontSize: 36, lineHeight: 1.1, margin: 0 }}>Economics Theory Quiz Bank</h1>
+              <p style={{ color: "#475569", fontSize: 16, lineHeight: 1.7, marginTop: 12 }}>
+                Clean reset version. No shadcn, no alias issues, no broken imports.
+              </p>
+
+              <div style={{ ...twoCol, marginTop: 24 }}>
+                <div style={{ gridColumn: "1 / -1" }}>
+                  <label style={styles.label}>Student Name (optional)</label>
+                  <input
+                    style={styles.input}
+                    value={studentName}
+                    onChange={(e) => setStudentName(e.target.value)}
+                    placeholder="Enter student name"
+                  />
                 </div>
 
-                <CardTitle className="text-3xl font-bold tracking-tight sm:text-4xl">
-                  Economics Theory Quiz
-                </CardTitle>
-
-                <CardDescription className="text-base leading-7 text-slate-600">
-                  Full-featured quiz system with timer, parts, shuffle, review mode, palette navigation, and CSV export.
-                </CardDescription>
-              </CardHeader>
-
-              <CardContent className="space-y-6 pt-4">
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div className="space-y-2 md:col-span-2">
-                    <Label htmlFor="studentName" className="text-sm font-medium">
-                      Student Name (optional)
-                    </Label>
-                    <div className="relative">
-                      <User className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                      <Input
-                        id="studentName"
-                        value={studentName}
-                        onChange={(e) => setStudentName(e.target.value)}
-                        placeholder="Enter student name"
-                        className="h-11 rounded-2xl pl-10"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium">Quiz Scope</Label>
-                    <Select value={selectedMode} onValueChange={setSelectedMode}>
-                      <SelectTrigger className="h-11 rounded-2xl">
-                        <SelectValue placeholder="Select part" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Questions ({masterQuestions.length})</SelectItem>
-                        {partOptions.map((part) => (
-                          <SelectItem key={part.value} value={part.value}>
-                            {part.label} ({part.start + 1}-{part.end})
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium">Timer Duration</Label>
-                    <Select value={durationMinutes} onValueChange={setDurationMinutes}>
-                      <SelectTrigger className="h-11 rounded-2xl">
-                        <SelectValue placeholder="Select duration" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {timerOptions.map((minutes) => (
-                          <SelectItem key={minutes} value={String(minutes)}>
-                            {minutes} minutes
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 md:col-span-2">
-                    <div className="mb-3 flex items-center gap-2">
-                      <Layers3 className="h-4 w-4 text-slate-500" />
-                      <span className="text-sm font-medium text-slate-700">Selected Mode</span>
-                    </div>
-                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                      <div>
-                        <div className="text-base font-semibold text-slate-900">{selectedModeLabel}</div>
-                        <div className="text-sm text-slate-500">
-                          {selectedModeQuestions.length} questions will be loaded.
-                        </div>
-                      </div>
-                      <Badge variant="secondary" className="rounded-full px-3 py-1">
-                        {selectedModeQuestions.length} questions
-                      </Badge>
-                    </div>
-                  </div>
-
-                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                    <div className="mb-3 flex items-center gap-2">
-                      <FileQuestion className="h-4 w-4 text-slate-500" />
-                      <span className="text-sm font-medium text-slate-700">Test Setup</span>
-                    </div>
-
-                    <div className="space-y-4">
-                      <div className="flex items-center space-x-3">
-                        <Checkbox
-                          id="shuffleQuestions"
-                          checked={shuffleQuestions}
-                          onCheckedChange={(checked) => setShuffleQuestions(Boolean(checked))}
-                        />
-                        <Label htmlFor="shuffleQuestions" className="cursor-pointer text-sm text-slate-700">
-                          Shuffle questions
-                        </Label>
-                      </div>
-
-                      <div className="flex items-center space-x-3">
-                        <Checkbox
-                          id="shuffleAnswers"
-                          checked={shuffleAnswers}
-                          onCheckedChange={(checked) => setShuffleAnswers(Boolean(checked))}
-                        />
-                        <Label htmlFor="shuffleAnswers" className="cursor-pointer text-sm text-slate-700">
-                          Shuffle answer choices
-                        </Label>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="grid gap-4 sm:grid-cols-3 md:col-span-2">
-                    <Card className="rounded-2xl border-slate-200 shadow-none">
-                      <CardContent className="p-4">
-                        <div className="text-sm text-slate-500">Question Bank</div>
-                        <div className="mt-1 text-2xl font-bold">{masterQuestions.length}</div>
-                      </CardContent>
-                    </Card>
-
-                    <Card className="rounded-2xl border-slate-200 shadow-none">
-                      <CardContent className="p-4">
-                        <div className="text-sm text-slate-500">Current Mode</div>
-                        <div className="mt-1 text-2xl font-bold">{selectedModeQuestions.length}</div>
-                      </CardContent>
-                    </Card>
-
-                    <Card className="rounded-2xl border-slate-200 shadow-none">
-                      <CardContent className="p-4">
-                        <div className="text-sm text-slate-500">Timer</div>
-                        <div className="mt-1 text-2xl font-bold">{durationMinutes} min</div>
-                      </CardContent>
-                    </Card>
-                  </div>
+                <div>
+                  <label style={styles.label}>Quiz Scope</label>
+                  <select style={styles.input} value={selectedMode} onChange={(e) => setSelectedMode(e.target.value)}>
+                    <option value="all">All Questions ({allQuestions.length})</option>
+                    {Array.from({ length: totalParts }, (_, index) => {
+                      const start = index * QUESTIONS_PER_PART + 1;
+                      const end = Math.min((index + 1) * QUESTIONS_PER_PART, allQuestions.length);
+                      return (
+                        <option key={index} value={`part-${index + 1}`}>
+                          Part {index + 1} ({start}-{end})
+                        </option>
+                      );
+                    })}
+                  </select>
                 </div>
 
-                <Button
-                  onClick={startQuiz}
-                  className="h-12 w-full rounded-2xl text-base font-semibold shadow-lg"
-                >
-                  <Play className="mr-2 h-4 w-4" />
-                  Start Test
-                </Button>
-              </CardContent>
-            </Card>
+                <div>
+                  <label style={styles.label}>Timer Duration</label>
+                  <select style={styles.input} value={durationMinutes} onChange={(e) => setDurationMinutes(e.target.value)}>
+                    {TIMER_OPTIONS.map((minutes) => (
+                      <option key={minutes} value={String(minutes)}>
+                        {minutes} minutes
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div style={{ ...styles.softCard, marginTop: 16 }}>
+                <div style={{ fontWeight: 700, marginBottom: 12 }}>Selected Mode</div>
+                <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
+                  <div>
+                    <div style={{ fontWeight: 800, fontSize: 18 }}>{selectedModeLabel}</div>
+                    <div style={{ color: "#64748b", marginTop: 4 }}>{selectedModeQuestions.length} questions will be loaded.</div>
+                  </div>
+                  <span style={styles.badge}>{selectedModeQuestions.length} questions</span>
+                </div>
+              </div>
+
+              <div style={{ ...styles.softCard, marginTop: 16 }}>
+                <div style={{ fontWeight: 700, marginBottom: 12 }}>Test Setup</div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 20 }}>
+                  <label style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <input type="checkbox" checked={shuffleQuestions} onChange={(e) => setShuffleQuestions(e.target.checked)} />
+                    Shuffle questions
+                  </label>
+                  <label style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <input type="checkbox" checked={shuffleAnswers} onChange={(e) => setShuffleAnswers(e.target.checked)} />
+                    Shuffle answer choices
+                  </label>
+                </div>
+              </div>
+
+              <div style={{ ...threeCol, marginTop: 16 }}>
+                <div style={styles.softCard}><div style={{ color: "#64748b" }}>Question Bank</div><div style={{ fontSize: 28, fontWeight: 800, marginTop: 6 }}>{allQuestions.length}</div></div>
+                <div style={styles.softCard}><div style={{ color: "#64748b" }}>Current Mode</div><div style={{ fontSize: 28, fontWeight: 800, marginTop: 6 }}>{selectedModeQuestions.length}</div></div>
+                <div style={styles.softCard}><div style={{ color: "#64748b" }}>Timer</div><div style={{ fontSize: 28, fontWeight: 800, marginTop: 6 }}>{durationMinutes} min</div></div>
+              </div>
+
+              <button style={{ ...styles.button, width: "100%", marginTop: 20, padding: "14px 18px", fontSize: 16 }} onClick={startQuiz}>
+                Start Test
+              </button>
+            </div>
           </div>
         )}
 
         {phase === "test" && currentQuestion && (
-          <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
-            <div className="space-y-6">
-              <div className="sticky top-4 z-20 rounded-3xl border border-slate-200 bg-white/90 p-4 shadow-lg backdrop-blur">
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="space-y-2">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <Badge className="rounded-full px-3 py-1">
-                        {selectedModeLabel}
-                      </Badge>
-                      <Badge variant="secondary" className="rounded-full px-3 py-1">
-                        Question {currentIndex + 1} of {totalQuestions}
-                      </Badge>
-                      <Badge variant="secondary" className="rounded-full px-3 py-1">
-                        Answered {answeredCount}/{totalQuestions}
-                      </Badge>
-                      {unansweredCount > 0 && (
-                        <Badge variant="outline" className="rounded-full px-3 py-1">
-                          Unanswered {unansweredCount}
-                        </Badge>
-                      )}
-                    </div>
-
-                    <Progress value={progressValue} className="h-2.5 rounded-full" />
-                  </div>
-
-                  <div
-                    className={`flex items-center gap-2 rounded-2xl px-4 py-3 text-sm font-semibold ${
-                      isWarning ? "bg-red-50 text-red-700" : "bg-slate-100 text-slate-700"
-                    }`}
-                  >
-                    {isWarning ? <AlertTriangle className="h-4 w-4" /> : <Clock className="h-4 w-4" />}
-                    <span>{formatTime(remainingSeconds)}</span>
-                  </div>
+          <div style={{ ...mainGrid, gridTemplateColumns: "minmax(0, 1fr)", alignItems: "start" }}>
+            <div style={{ ...styles.card, padding: 20, position: "sticky", top: 16, zIndex: 10 }}>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center", justifyContent: "space-between" }}>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+                  <span style={styles.primaryBadge}>{selectedModeLabel}</span>
+                  <span style={styles.badge}>Question {currentIndex + 1} of {totalQuestions}</span>
+                  <span style={styles.badge}>Answered {answeredCount}/{totalQuestions}</span>
+                  <span style={styles.badge}>Unanswered {unansweredCount}</span>
                 </div>
+                <span style={{ ...styles.badge, background: isWarning ? "#fee2e2" : "#e2e8f0", color: isWarning ? "#991b1b" : "#0f172a" }}>
+                  {formatTime(remainingSeconds)}
+                </span>
               </div>
+              <div style={{ marginTop: 14, ...styles.progressWrap }}>
+                <div style={styles.progressFill(progressValue)} />
+              </div>
+            </div>
 
-              <Card className="rounded-3xl border-slate-200 shadow-xl">
-                <CardHeader className="space-y-4">
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <CardTitle className="text-xl font-semibold leading-8 sm:text-2xl">
-                        {currentQuestion.question}
-                      </CardTitle>
-                      <CardDescription className="mt-2 text-sm text-slate-500">
-                        Select one answer.
-                      </CardDescription>
-                    </div>
-
-                    <Badge variant="outline" className="shrink-0 rounded-full px-3 py-1">
-                      {answers[currentIndex] !== undefined ? "Answered" : "Pending"}
-                    </Badge>
+            <div style={{ display: "grid", gap: 24, gridTemplateColumns: "minmax(0, 1fr)" }}>
+              <div style={{ ...styles.card, padding: 24 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start", marginBottom: 16 }}>
+                  <div>
+                    <h2 style={{ margin: 0, fontSize: 28, lineHeight: 1.4 }}>{currentQuestion.question}</h2>
+                    <div style={{ color: "#64748b", marginTop: 8 }}>Select one answer.</div>
                   </div>
-                </CardHeader>
+                  <span style={styles.badge}>{answers[currentIndex] !== undefined ? "Answered" : "Pending"}</span>
+                </div>
 
-                <CardContent className="space-y-3">
+                <div style={{ display: "grid", gap: 12 }}>
                   {currentQuestion.options.map((option, optionIndex) => {
                     const isSelected = answers[currentIndex] === optionIndex;
-
                     return (
                       <button
                         key={`${currentQuestion.id}-${optionIndex}`}
                         type="button"
                         onClick={() => handleSelectAnswer(optionIndex)}
-                        className={`w-full rounded-2xl border p-4 text-left transition-all ${
-                          isSelected
-                            ? "border-slate-900 bg-slate-900 text-white shadow-md"
-                            : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50"
-                        }`}
+                        style={isSelected ? styles.optionSelected : styles.option}
                       >
-                        <div className="flex items-start gap-3">
-                          <div
-                            className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-sm font-semibold ${
-                              isSelected ? "bg-white text-slate-900" : "bg-slate-100 text-slate-700"
-                            }`}
-                          >
+                        <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+                          <div style={{
+                            width: 30,
+                            height: 30,
+                            borderRadius: 999,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            background: isSelected ? "#ffffff" : "#e2e8f0",
+                            color: isSelected ? "#0f172a" : "#334155",
+                            fontWeight: 800,
+                            flexShrink: 0
+                          }}>
                             {String.fromCharCode(65 + optionIndex)}
                           </div>
-                          <div className="text-sm leading-7 sm:text-base">{option}</div>
+                          <div>{option}</div>
                         </div>
                       </button>
                     );
                   })}
+                </div>
 
-                  <div className="flex flex-col gap-3 pt-4 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="flex gap-3">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="rounded-2xl"
-                        onClick={() => setCurrentIndex((prev) => Math.max(prev - 1, 0))}
-                        disabled={currentIndex === 0}
-                      >
-                        <ChevronLeft className="mr-2 h-4 w-4" />
-                        Previous
-                      </Button>
-
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="rounded-2xl"
-                        onClick={() => setCurrentIndex((prev) => Math.min(prev + 1, totalQuestions - 1))}
-                        disabled={currentIndex === totalQuestions - 1}
-                      >
-                        Next
-                        <ChevronRight className="ml-2 h-4 w-4" />
-                      </Button>
-                    </div>
-
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button className="rounded-2xl">Submit Test</Button>
-                      </AlertDialogTrigger>
-
-                      <AlertDialogContent className="rounded-3xl">
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Submit your test?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            You have answered {answeredCount} out of {totalQuestions} questions.
-                            Unanswered questions will be marked incorrect.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-
-                        <AlertDialogFooter>
-                          <AlertDialogCancel className="rounded-2xl">Cancel</AlertDialogCancel>
-                          <AlertDialogAction className="rounded-2xl" onClick={submitQuiz}>
-                            Final Submit
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 12, justifyContent: "space-between", marginTop: 20 }}>
+                  <div style={{ display: "flex", gap: 12 }}>
+                    <button
+                      style={{ ...styles.outlineButton, opacity: currentIndex === 0 ? 0.5 : 1 }}
+                      onClick={() => setCurrentIndex((prev) => Math.max(prev - 1, 0))}
+                      disabled={currentIndex === 0}
+                    >
+                      Previous
+                    </button>
+                    <button
+                      style={{ ...styles.outlineButton, opacity: currentIndex === totalQuestions - 1 ? 0.5 : 1 }}
+                      onClick={() => setCurrentIndex((prev) => Math.min(prev + 1, totalQuestions - 1))}
+                      disabled={currentIndex === totalQuestions - 1}
+                    >
+                      Next
+                    </button>
                   </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            <div className="space-y-6">
-              <Card className="rounded-3xl border-slate-200 shadow-lg">
-                <CardHeader>
-                  <CardTitle className="text-lg">Question Palette</CardTitle>
-                  <CardDescription>Jump directly to any question.</CardDescription>
-                </CardHeader>
-
-                <CardContent>
-                  <div className="grid grid-cols-5 gap-2 sm:grid-cols-6 lg:grid-cols-5">
-                    {quizQuestions.map((_, index) => {
-                      const isActive = index === currentIndex;
-                      const isAnswered = answers[index] !== undefined;
-
-                      return (
-                        <button
-                          key={`nav-${index}`}
-                          type="button"
-                          onClick={() => jumpToQuestion(index)}
-                          className={`flex h-11 w-full items-center justify-center rounded-2xl border text-sm font-semibold transition ${
-                            isActive
-                              ? "border-slate-900 bg-slate-900 text-white"
-                              : isAnswered
-                              ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                              : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
-                          }`}
-                        >
-                          {index + 1}
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  <div className="mt-4 space-y-2 text-sm text-slate-600">
-                    <div className="flex items-center gap-2">
-                      <span className="inline-block h-3 w-3 rounded-full bg-slate-900" /> Current
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="inline-block h-3 w-3 rounded-full bg-emerald-500" /> Answered
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="inline-block h-3 w-3 rounded-full bg-slate-300" /> Unanswered
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="rounded-3xl border-slate-200 shadow-lg">
-                <CardHeader>
-                  <CardTitle className="text-lg">Live Summary</CardTitle>
-                  <CardDescription>Quick test status</CardDescription>
-                </CardHeader>
-
-                <CardContent className="space-y-3 text-sm">
-                  <div className="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3">
-                    <span>Total</span>
-                    <span className="font-semibold">{totalQuestions}</span>
-                  </div>
-
-                  <div className="flex items-center justify-between rounded-2xl bg-emerald-50 px-4 py-3 text-emerald-700">
-                    <span>Answered</span>
-                    <span className="font-semibold">{answeredCount}</span>
-                  </div>
-
-                  <div className="flex items-center justify-between rounded-2xl bg-amber-50 px-4 py-3 text-amber-700">
-                    <span>Unanswered</span>
-                    <span className="font-semibold">{unansweredCount}</span>
-                  </div>
-
-                  <div
-                    className={`flex items-center justify-between rounded-2xl px-4 py-3 ${
-                      isWarning ? "bg-red-50 text-red-700" : "bg-slate-50"
-                    }`}
+                  <button
+                    style={styles.button}
+                    onClick={() => {
+                      const ok = window.confirm(`Submit your test? You answered ${answeredCount} of ${totalQuestions}.`);
+                      if (ok) submitQuiz();
+                    }}
                   >
-                    <span>Time Left</span>
-                    <span className="font-semibold">{formatTime(remainingSeconds)}</span>
-                  </div>
-                </CardContent>
-              </Card>
+                    Submit Test
+                  </button>
+                </div>
+              </div>
+
+              <div style={{ ...styles.card, padding: 20 }}>
+                <div style={{ fontWeight: 800, fontSize: 20, marginBottom: 12 }}>Question Palette</div>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(44px, 1fr))", gap: 10 }}>
+                  {quizQuestions.map((_, index) => {
+                    const isActive = index === currentIndex;
+                    const isAnswered = answers[index] !== undefined;
+                    const btnStyle = isActive ? styles.paletteActive : isAnswered ? styles.paletteAnswered : styles.paletteBtn;
+                    return (
+                      <button key={index} style={btnStyle} onClick={() => jumpToQuestion(index)}>
+                        {index + 1}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
           </div>
         )}
 
         {phase === "results" && (
-          <div className="space-y-6">
-            <div className="grid gap-6 xl:grid-cols-[380px_minmax(0,1fr)]">
-              <Card className="rounded-3xl border-slate-200 shadow-xl">
-                <CardHeader>
-                  <div className="flex items-center justify-between gap-3">
-                    <CardTitle className="text-2xl">Results</CardTitle>
-                    {isAutoSubmitted && (
-                      <Badge variant="destructive" className="rounded-full px-3 py-1">
-                        Auto-submitted
-                      </Badge>
-                    )}
-                  </div>
+          <div style={{ display: "grid", gap: 24 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: 24, alignItems: "start" }}>
+              <div style={{ ...styles.card, padding: 24 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
+                  <h2 style={{ margin: 0, fontSize: 30 }}>Results</h2>
+                  {isAutoSubmitted && <span style={{ ...styles.badge, background: "#fee2e2", color: "#991b1b" }}>Auto-submitted</span>}
+                </div>
+                <div style={{ color: "#64748b", marginTop: 8 }}>{studentName ? `${studentName}'s score summary` : "Quiz score summary"}</div>
 
-                  <CardDescription>
-                    {studentName ? `${studentName}'s score summary` : "Quiz score summary"}
-                  </CardDescription>
-                </CardHeader>
+                <div style={{ background: "#0f172a", color: "#ffffff", borderRadius: 24, padding: 24, marginTop: 18 }}>
+                  <div style={{ color: "#cbd5e1" }}>Total Score</div>
+                  <div style={{ fontSize: 48, fontWeight: 900, marginTop: 8 }}>{summary.percent}%</div>
+                  <div style={{ color: "#cbd5e1", marginTop: 8 }}>{summary.correct} correct out of {quizQuestions.length}</div>
+                </div>
 
-                <CardContent className="space-y-4">
-                  <div className="rounded-3xl bg-slate-900 p-6 text-white">
-                    <div className="text-sm text-slate-300">Total Score</div>
-                    <div className="mt-2 text-4xl font-bold">{summary.percent}%</div>
-                    <div className="mt-2 text-sm text-slate-300">
-                      {summary.correct} correct out of {quizQuestions.length}
-                    </div>
-                  </div>
+                <div style={{ ...styles.softCard, marginTop: 16 }}>
+                  <div style={{ color: "#64748b" }}>Attempt</div>
+                  <div style={{ fontWeight: 800, marginTop: 6 }}>{selectedModeLabel}</div>
+                </div>
 
-                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                    <div className="text-sm text-slate-500">Attempt</div>
-                    <div className="mt-1 text-lg font-semibold">{selectedModeLabel}</div>
-                  </div>
+                <div style={{ ...threeCol, marginTop: 16 }}>
+                  <div style={{ ...styles.softCard, background: "#f0fdf4", borderColor: "#bbf7d0", color: "#166534" }}><div>Correct</div><div style={{ fontSize: 28, fontWeight: 900, marginTop: 6 }}>{summary.correct}</div></div>
+                  <div style={{ ...styles.softCard, background: "#fef2f2", borderColor: "#fecaca", color: "#991b1b" }}><div>Incorrect</div><div style={{ fontSize: 28, fontWeight: 900, marginTop: 6 }}>{summary.incorrect}</div></div>
+                  <div style={styles.softCard}><div style={{ color: "#64748b" }}>Time Used</div><div style={{ fontSize: 28, fontWeight: 900, marginTop: 6 }}>{formatTime(summary.timeUsed)}</div></div>
+                </div>
 
-                  <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
-                    <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-700">
-                      <div className="text-sm">Correct</div>
-                      <div className="mt-1 text-2xl font-bold">{summary.correct}</div>
-                    </div>
+                <div style={{ display: "grid", gap: 12, marginTop: 18 }}>
+                  <button style={styles.button} onClick={exportCsv}>Export CSV Results</button>
+                  <button style={styles.outlineButton} onClick={restartQuiz}>Restart / Retake</button>
+                </div>
+              </div>
 
-                    <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-red-700">
-                      <div className="text-sm">Incorrect</div>
-                      <div className="mt-1 text-2xl font-bold">{summary.incorrect}</div>
-                    </div>
+              <div style={{ ...styles.card, padding: 24 }}>
+                <h2 style={{ marginTop: 0, fontSize: 30 }}>Review Mode</h2>
+                <div style={{ color: "#64748b", marginBottom: 18 }}>Correct answers are green. Wrong selected answers are red.</div>
 
-                    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                      <div className="text-sm text-slate-500">Time Used</div>
-                      <div className="mt-1 text-2xl font-bold">{formatTime(summary.timeUsed)}</div>
-                    </div>
-
-                    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                      <div className="text-sm text-slate-500">Student</div>
-                      <div className="mt-1 truncate text-lg font-semibold">
-                        {studentName || "Anonymous"}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-col gap-3">
-                    <Button onClick={exportCsv} className="rounded-2xl">
-                      <Download className="mr-2 h-4 w-4" />
-                      Export CSV Results
-                    </Button>
-
-                    <Button onClick={restartQuiz} variant="outline" className="rounded-2xl">
-                      <RotateCcw className="mr-2 h-4 w-4" />
-                      Restart / Retake
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="rounded-3xl border-slate-200 shadow-xl">
-                <CardHeader>
-                  <CardTitle className="text-2xl">Review Mode</CardTitle>
-                  <CardDescription>
-                    Correct answers are shown in green. Wrong selected answers are shown in red.
-                  </CardDescription>
-                </CardHeader>
-
-                <CardContent className="space-y-6">
+                <div style={{ display: "grid", gap: 18 }}>
                   {quizQuestions.map((q, index) => {
                     const selectedIndex = answers[index];
                     const hasAnswered = typeof selectedIndex === "number";
                     const isCorrect = selectedIndex === q.correctIndex;
 
                     return (
-                      <div key={q.id} className="rounded-3xl border border-slate-200 p-5">
-                        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                      <div key={q.id} style={{ border: "1px solid #e2e8f0", borderRadius: 22, padding: 18 }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap", marginBottom: 12 }}>
                           <div>
-                            <div className="text-sm font-medium text-slate-500">Question {index + 1}</div>
-                            <h3 className="mt-1 text-lg font-semibold leading-8">{q.question}</h3>
+                            <div style={{ color: "#64748b", fontWeight: 700 }}>Question {index + 1}</div>
+                            <div style={{ fontSize: 20, fontWeight: 800, lineHeight: 1.5, marginTop: 6 }}>{q.question}</div>
                           </div>
-
-                          {hasAnswered ? (
-                            isCorrect ? (
-                              <Badge className="rounded-full bg-emerald-600 px-3 py-1 hover:bg-emerald-600">
-                                <CheckCircle2 className="mr-1 h-4 w-4" /> Correct
-                              </Badge>
-                            ) : (
-                              <Badge className="rounded-full bg-red-600 px-3 py-1 hover:bg-red-600">
-                                <XCircle className="mr-1 h-4 w-4" /> Incorrect
-                              </Badge>
-                            )
-                          ) : (
-                            <Badge variant="outline" className="rounded-full px-3 py-1">
-                              No answer
-                            </Badge>
-                          )}
+                          <span style={{
+                            ...styles.badge,
+                            background: !hasAnswered ? "#e2e8f0" : isCorrect ? "#dcfce7" : "#fee2e2",
+                            color: !hasAnswered ? "#334155" : isCorrect ? "#166534" : "#991b1b"
+                          }}>
+                            {!hasAnswered ? "No answer" : isCorrect ? "Correct" : "Incorrect"}
+                          </span>
                         </div>
 
-                        <div className="space-y-3">
+                        <div style={{ display: "grid", gap: 10 }}>
                           {q.options.map((option, optionIndex) => {
                             const isUserChoice = selectedIndex === optionIndex;
                             const isRightAnswer = q.correctIndex === optionIndex;
 
-                            let itemClass = "border-slate-200 bg-white text-slate-700";
-                            if (isRightAnswer) itemClass = "border-emerald-200 bg-emerald-50 text-emerald-800";
-                            if (isUserChoice && !isRightAnswer) itemClass = "border-red-200 bg-red-50 text-red-800";
+                            let bg = "#ffffff";
+                            let color = "#334155";
+                            let border = "1px solid #e2e8f0";
+
+                            if (isRightAnswer) {
+                              bg = "#f0fdf4";
+                              color = "#166534";
+                              border = "1px solid #bbf7d0";
+                            }
+                            if (isUserChoice && !isRightAnswer) {
+                              bg = "#fef2f2";
+                              color = "#991b1b";
+                              border = "1px solid #fecaca";
+                            }
 
                             return (
-                              <div
-                                key={`${q.id}-review-${optionIndex}`}
-                                className={`rounded-2xl border p-4 ${itemClass}`}
-                              >
-                                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                                  <div className="flex items-start gap-3">
-                                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white/80 text-sm font-semibold">
-                                      {String.fromCharCode(65 + optionIndex)}
-                                    </div>
-                                    <div className="text-sm leading-7 sm:text-base">{option}</div>
-                                  </div>
-
-                                  <div className="flex flex-wrap gap-2">
-                                    {isRightAnswer && (
-                                      <Badge className="rounded-full bg-emerald-600 hover:bg-emerald-600">
-                                        Correct answer
-                                      </Badge>
-                                    )}
-                                    {isUserChoice && (
-                                      <Badge
-                                        className={`rounded-full ${
-                                          isRightAnswer
-                                            ? "bg-emerald-700 hover:bg-emerald-700"
-                                            : "bg-red-600 hover:bg-red-600"
-                                        }`}
-                                      >
-                                        Your answer
-                                      </Badge>
-                                    )}
+                              <div key={optionIndex} style={{ background: bg, color, border, borderRadius: 16, padding: 14 }}>
+                                <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+                                  <div><strong>{String.fromCharCode(65 + optionIndex)}.</strong> {option}</div>
+                                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                                    {isRightAnswer && <span style={{ ...styles.badge, background: "#166534", color: "#ffffff" }}>Correct answer</span>}
+                                    {isUserChoice && <span style={{ ...styles.badge, background: isRightAnswer ? "#166534" : "#991b1b", color: "#ffffff" }}>Your answer</span>}
                                   </div>
                                 </div>
                               </div>
@@ -866,8 +709,8 @@ export default function App() {
                       </div>
                     );
                   })}
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             </div>
           </div>
         )}

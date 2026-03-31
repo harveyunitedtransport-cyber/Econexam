@@ -1,4 +1,4 @@
-const rawQuestionText = String.raw`An economy’s gross domestic product is …..
+export const rawQuestionText = String.raw`An economy’s gross domestic product is …..
 ====
 the excess of spending over income.
 ====
